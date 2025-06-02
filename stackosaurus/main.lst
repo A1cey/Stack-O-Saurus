@@ -1,0 +1,411 @@
+main                                                                                                                    PAGE 1
+  00A0                   1     JUMP_KEY        equ     P2.0
+                         2
+  0020                   3     VAR             equ     20h
+  0001                   4     AIRTIME     equ VAR.1
+  0002                   5     BLOCK_POS       equ     VAR.2
+  0003                   6     SCORE       equ VAR.3
+                         7
+                         8     ; game_loop:
+                         9     ; shift block position
+                        10     ; decr airtime
+                        11     ; check for jump input
+                        12     ; animate everything
+                        13     ; inc score
+                        14
+                        15     init:
+0000 758000             16         mov     P0, #0
+0003 759000             17         mov     P1, #0
+0006 75A0FF             18             mov         P2, #0FFh
+0009 C2F0               19             clr     B.0
+000B 750100             20             mov         AIRTIME, #0
+000E 750201             21             mov         BLOCK_POS, #000000001b ; pos is instantly shifted left
+0011 750300             22             mov         SCORE, #0
+                        23
+                        24             ; jmp to game start
+0014 020017             25             jmp         shift_block_pos
+                        26
+                        27     shift_block_pos:
+0017 E502               28             mov         A, BLOCK_POS
+0019 23                 29             rl          A
+001A F502               30             mov         BLOCK_POS, A
+                        31
+001C 02001F             32             jmp         update_airtime
+                        33
+                        34     update_airtime:
+001F E501               35             mov         A, AIRTIME
+0021 B40003             36             cjne    A, #0, decr_airtime
+0024 02002C             37             jmp         check_jump_input
+                        38
+                        39     decr_airtime:
+0027 1501               40             dec         AIRTIME
+0029 02002C             41             jmp         check_jump_input
+                        42
+                        43     check_jump_input:
+                        44             ; if airtime not 0 you cannot jump
+002C E501               45             mov     A, AIRTIME
+002E B4000E             46             cjne    A, #0, animate_player
+                        47
+0031 E5A0               48             mov         A, P2
+0033 75A0FF             49             mov         P2, #0FFh
+                        50
+                        51             ; no jump input
+0036 B4FE06             52             cjne    A, #11111110b, animate_player
+                        53
+0039 750103             54             mov         AIRTIME, #3
+                        55
+003C 02003F             56             jmp         animate_player
+                        57
+                        58     animate_player:
+003F 758000             59             mov         P0, #0              ; prevents early values
+                        60
+0042 E501               61             mov         A, AIRTIME
+0044 B40009             62             cjne    A, #0, check_1
+                        63
+                        64             ; animate player on ground
+0047 759040             65             mov         P1, #01000000b
+004A 758006             66             mov         P0, #00000110b
+004D 02006E             67             jmp         animate_block
+                        68
+                        69     check_1:
+0050 B40103             70             cjne    A, #1, check_3
+0053 02005C             71             jmp         animate_player_air_1
+                        72
+                        73     check_3:
+0056 B4030C             74             cjne    A, #3, animate_player_air_2
+0059 02005C             75             jmp         animate_player_air_1
+                        76
+                        77     animate_player_air_1:
+                        78             ; animate player one pixel in air
+005C 759040             79             mov         P1, #01000000b
+005F 75800C             80             mov         P0, #00001100b
+                        81
+0062 02006E             82             jmp         animate_block
+                        83
+                        84     animate_player_air_2:
+                        85             ; animate player two pixels in air
+0065 759040             86             mov         P1, #01000000b
+0068 758018             87             mov         P0, #00011000b
+006B 02006E             88             jmp         animate_block
+                        89
+                        90     animate_block:
+                        91         ; if player in air, no collision
+006E E501               92             mov         A, AIRTIME
+0070 B40014             93             cjne    A, #0, animate_block_normal
+                        94
+                        95             ; if player on ground and block on player x pos, collision else animate block and player bott
+0073 E502               96             mov         A, BLOCK_POS
+0075 B44003             97             cjne    A, #01000000b, animate_block_bottom_player
+                        98
+0078 0200A3             99             jmp         game_over
+                       100
+                       101     animate_block_bottom_player:
+007B 758002            102         mov     P0, #00000010b
+007E E502              103         mov     A, BLOCK_POS
+0080 D2E6              104         setb    A.6
+0082 F590              105             mov         P1, A
+                       106
+0084 020093            107             jmp         animate_floor
+                       108
+                       109     animate_block_normal:
+0087 758000            110             mov         P0, #0
+008A 850290            111             mov         P1, BLOCK_POS
+008D 758002            112             mov         P0, #00000010b
+                       113
+0090 020093            114             jmp         animate_floor
+                       115
+                       116     animate_floor:
+0093 758000            117             mov         P0, #0
+0096 7590FF            118             mov         P1, #11111111b
+0099 758001            119             mov         P0, #00000001b
+                       120
+009C 02009F            121             jmp         inc_score
+                       122
+                       123     inc_score:
+009F 0503              124             inc         SCORE
+00A1 0117              125             jmp         shift_block_pos
+                       126
+                       127
+                       128     game_over:
+00A3 758000            129             mov         P0, #0
+00A6 759000            130             mov         P1, #0
+                       131
+00A9 0200AC            132             jmp calc_score_digits
+                       133
+                       134     calc_score_digits:
+                       135         ; calculate digits
+00AC E503              136         MOV A, SCORE
+00AE 75F064            137         MOV B, #100
+00B1 84                138         DIV AB              ; A: hundreds, B: remainder
+00B2 F9                139         MOV R1, A           ; R1: hundreds digit
+00B3 ACF0              140         MOV R4, B           ; R4: remainder
+                       141
+00B5 EC                142         MOV A, R4           ; A: remainder
+00B6 75F00A            143         MOV B, #10
+00B9 84                144         DIV AB              ; A: tens, B: units
+00BA FA                145         MOV R2, A           ; R2: tens digit
+00BB ABF0              146         MOV R3, B           ; R3: units digit
+                       147
+                       148         ; get hex value for digits
+00BD 9000F2            149         MOV DPTR, #segment_table
+00C0 E9                150         MOV A, R1
+00C1 93                151         MOVC A, @A+DPTR
+00C2 FD                152         MOV R5, A           ; R5: hundreds
+                       153
+00C3 9000F2            154         MOV DPTR, #segment_table
+00C6 EA                155         MOV A, R2
+00C7 93                156         MOVC A, @A+DPTR
+00C8 FE                157         MOV R6, A           ; R6: tens
+                       158
+00C9 9000F2            159         MOV DPTR, #segment_table
+00CC EB                160         MOV A, R3
+00CD 93                161         MOVC A, @A+DPTR
+00CE FF                162         MOV R7, A           ; R7: units
+                       163
+00CF 0200D2            164         jmp show_score_0
+                       165
+                       166     show_score_0:
+00D2 758000            167         mov     P0, #0
+00D5 8DB0              168         mov     P3, R5
+00D7 758004            169             mov     P0, #00000100b ; activate hundreds
+                       170
+00DA 0200DD            171         jmp show_score_1
+                       172
+                       173     show_score_1:
+00DD 758000            174         mov     P0, #0
+00E0 8EB0              175         mov     P3, R6
+00E2 758002            176             mov     P0, #00000010b ; activate tens
+                       177
+00E5 0200E8            178         jmp show_score_2
+                       179
+                       180     show_score_2:
+00E8 758000            181         mov     P0, #0
+00EB 8FB0              182         mov     P3, R7
+00ED 758001            183             mov     P0, #00000001b ; activate units
+                       184
+00F0 80E0              185         jmp show_score_0
+                       186
+                       187     ; lookup table for 7-segment display(ABCDEFG0)
+                       188     segment_table:
+00F2 FC                189         db 0FCH ; 0 = 11111100
+00F3 60                190         db 060H ; 1 = 01100000
+00F4 DA                191         db 0DAH ; 2 = 11011010
+00F5 F2                192         db 0F2H ; 3 = 11110010
+00F6 66                193         db 066H ; 4 = 01100110
+00F7 B6                194         db 0B6H ; 5 = 10110110
+00F8 BE                195         db 0BEH ; 6 = 10111110
+00F9 E0                196         db 0E0H ; 7 = 11100000
+00FA FE                197         db 0FEH ; 8 = 11111110
+00FB F6                198         db 0F6H ; 9 = 11110110
+                       199
+                       200     end
+ASSEMBLY COMPLETE, NO ERRORS FOUND, NO WARNINGS
+
+
+SYMBOL TABLE:
+??MCU_8051_IDE . . . . . . . . . . .  N  NUMB  8051H  NOT USED
+??VERSION. . . . . . . . . . . . . .  N  NUMB  0149H  NOT USED
+AC . . . . . . . . . . . . . . . . .  B  ADDR  00D6H  NOT USED
+ACC. . . . . . . . . . . . . . . . .  D  ADDR  00E0H  NOT USED
+ACSR . . . . . . . . . . . . . . . .  D  ADDR  0097H  NOT USED
+ADCF . . . . . . . . . . . . . . . .  D  ADDR  00F6H  NOT USED
+ADCLK. . . . . . . . . . . . . . . .  D  ADDR  00F2H  NOT USED
+ADCON. . . . . . . . . . . . . . . .  D  ADDR  00F3H  NOT USED
+ADDH . . . . . . . . . . . . . . . .  D  ADDR  00F5H  NOT USED
+ADDL . . . . . . . . . . . . . . . .  D  ADDR  00F4H  NOT USED
+AIRTIME. . . . . . . . . . . . . . .  N  NUMB  0001H
+ANIMATE_BLOCK. . . . . . . . . . . .  C  ADDR  006EH
+ANIMATE_BLOCK_BOTTOM_PLAYER. . . . .  C  ADDR  007BH
+ANIMATE_BLOCK_NORMAL . . . . . . . .  C  ADDR  0087H
+ANIMATE_FLOOR. . . . . . . . . . . .  C  ADDR  0093H
+ANIMATE_PLAYER . . . . . . . . . . .  C  ADDR  003FH
+ANIMATE_PLAYER_AIR_1 . . . . . . . .  C  ADDR  005CH
+ANIMATE_PLAYER_AIR_2 . . . . . . . .  C  ADDR  0065H
+AUXR . . . . . . . . . . . . . . . .  D  ADDR  008EH  NOT USED
+AUXR1. . . . . . . . . . . . . . . .  D  ADDR  00A2H  NOT USED
+B. . . . . . . . . . . . . . . . . .  D  ADDR  00F0H
+BDRCON . . . . . . . . . . . . . . .  D  ADDR  009BH  NOT USED
+BDRCON_1 . . . . . . . . . . . . . .  D  ADDR  009CH  NOT USED
+BLOCK_POS. . . . . . . . . . . . . .  N  NUMB  0002H
+BRL. . . . . . . . . . . . . . . . .  D  ADDR  009AH  NOT USED
+CALC_SCORE_DIGITS. . . . . . . . . .  C  ADDR  00ACH
+CCAP0H . . . . . . . . . . . . . . .  D  ADDR  00FAH  NOT USED
+CCAP0L . . . . . . . . . . . . . . .  D  ADDR  00EAH  NOT USED
+CCAP1H . . . . . . . . . . . . . . .  D  ADDR  00FBH  NOT USED
+CCAP1L . . . . . . . . . . . . . . .  D  ADDR  00EBH  NOT USED
+CCAP2H . . . . . . . . . . . . . . .  D  ADDR  00FCH  NOT USED
+CCAP3H . . . . . . . . . . . . . . .  D  ADDR  00FDH  NOT USED
+CCAP4H . . . . . . . . . . . . . . .  D  ADDR  00FEH  NOT USED
+CCAPL2H. . . . . . . . . . . . . . .  D  ADDR  00FCH  NOT USED
+CCAPL2L. . . . . . . . . . . . . . .  D  ADDR  00ECH  NOT USED
+CCAPL3H. . . . . . . . . . . . . . .  D  ADDR  00FDH  NOT USED
+CCAPL3L. . . . . . . . . . . . . . .  D  ADDR  00EDH  NOT USED
+CCAPL4H. . . . . . . . . . . . . . .  D  ADDR  00FEH  NOT USED
+CCAPL4L. . . . . . . . . . . . . . .  D  ADDR  00EEH  NOT USED
+CCAPM0 . . . . . . . . . . . . . . .  D  ADDR  00DAH  NOT USED
+CCAPM1 . . . . . . . . . . . . . . .  D  ADDR  00DBH  NOT USED
+CCAPM2 . . . . . . . . . . . . . . .  D  ADDR  00DCH  NOT USED
+CCAPM3 . . . . . . . . . . . . . . .  D  ADDR  00DDH  NOT USED
+CCAPM4 . . . . . . . . . . . . . . .  D  ADDR  00DEH  NOT USED
+CCF0 . . . . . . . . . . . . . . . .  B  ADDR  00D8H  NOT USED
+CCF1 . . . . . . . . . . . . . . . .  B  ADDR  00D9H  NOT USED
+CCF2 . . . . . . . . . . . . . . . .  B  ADDR  00DAH  NOT USED
+CCF3 . . . . . . . . . . . . . . . .  B  ADDR  00DBH  NOT USED
+CCF4 . . . . . . . . . . . . . . . .  B  ADDR  00DCH  NOT USED
+CCON . . . . . . . . . . . . . . . .  D  ADDR  00D8H  NOT USED
+CFINT. . . . . . . . . . . . . . . .  C  ADDR  0033H  NOT USED
+CH . . . . . . . . . . . . . . . . .  D  ADDR  00F9H  NOT USED
+CHECK_1. . . . . . . . . . . . . . .  C  ADDR  0050H
+CHECK_3. . . . . . . . . . . . . . .  C  ADDR  0056H
+CHECK_JUMP_INPUT . . . . . . . . . .  C  ADDR  002CH
+CKCON. . . . . . . . . . . . . . . .  D  ADDR  008FH  NOT USED
+CKCON0 . . . . . . . . . . . . . . .  D  ADDR  008FH  NOT USED
+CKRL . . . . . . . . . . . . . . . .  D  ADDR  0097H  NOT USED
+CKSEL. . . . . . . . . . . . . . . .  D  ADDR  0085H  NOT USED
+CL . . . . . . . . . . . . . . . . .  D  ADDR  00E9H  NOT USED
+CLKREG . . . . . . . . . . . . . . .  D  ADDR  008FH  NOT USED
+CMOD . . . . . . . . . . . . . . . .  D  ADDR  00D9H  NOT USED
+CPRL2. . . . . . . . . . . . . . . .  B  ADDR  00C8H  NOT USED
+CR . . . . . . . . . . . . . . . . .  B  ADDR  00DEH  NOT USED
+CT2. . . . . . . . . . . . . . . . .  B  ADDR  00C9H  NOT USED
+CY . . . . . . . . . . . . . . . . .  B  ADDR  00D7H  NOT USED
+DECR_AIRTIME . . . . . . . . . . . .  C  ADDR  0027H
+DP0H . . . . . . . . . . . . . . . .  D  ADDR  0083H  NOT USED
+DP0L . . . . . . . . . . . . . . . .  D  ADDR  0082H  NOT USED
+DP1H . . . . . . . . . . . . . . . .  D  ADDR  0085H  NOT USED
+DP1L . . . . . . . . . . . . . . . .  D  ADDR  0084H  NOT USED
+DPH. . . . . . . . . . . . . . . . .  D  ADDR  0083H  NOT USED
+DPL. . . . . . . . . . . . . . . . .  D  ADDR  0082H  NOT USED
+EA . . . . . . . . . . . . . . . . .  B  ADDR  00AFH  NOT USED
+EC . . . . . . . . . . . . . . . . .  B  ADDR  00AEH  NOT USED
+EECON. . . . . . . . . . . . . . . .  D  ADDR  0096H  NOT USED
+ES . . . . . . . . . . . . . . . . .  B  ADDR  00ACH  NOT USED
+ET0. . . . . . . . . . . . . . . . .  B  ADDR  00A9H  NOT USED
+ET1. . . . . . . . . . . . . . . . .  B  ADDR  00ABH  NOT USED
+ET2. . . . . . . . . . . . . . . . .  B  ADDR  00ADH  NOT USED
+EX0. . . . . . . . . . . . . . . . .  B  ADDR  00A8H  NOT USED
+EX1. . . . . . . . . . . . . . . . .  B  ADDR  00AAH  NOT USED
+EXEN2. . . . . . . . . . . . . . . .  B  ADDR  00CBH  NOT USED
+EXF2 . . . . . . . . . . . . . . . .  B  ADDR  00CEH  NOT USED
+EXTI0. . . . . . . . . . . . . . . .  C  ADDR  0003H  NOT USED
+EXTI1. . . . . . . . . . . . . . . .  C  ADDR  0013H  NOT USED
+F0 . . . . . . . . . . . . . . . . .  B  ADDR  00D5H  NOT USED
+FE . . . . . . . . . . . . . . . . .  B  ADDR  009FH  NOT USED
+GAME_OVER. . . . . . . . . . . . . .  C  ADDR  00A3H
+IE . . . . . . . . . . . . . . . . .  D  ADDR  00A8H  NOT USED
+IE0. . . . . . . . . . . . . . . . .  B  ADDR  0089H  NOT USED
+IE1. . . . . . . . . . . . . . . . .  B  ADDR  008BH  NOT USED
+INC_SCORE. . . . . . . . . . . . . .  C  ADDR  009FH
+INIT . . . . . . . . . . . . . . . .  C  ADDR  0000H  NOT USED
+INT0 . . . . . . . . . . . . . . . .  B  ADDR  00B2H  NOT USED
+INT1 . . . . . . . . . . . . . . . .  B  ADDR  00B3H  NOT USED
+IP . . . . . . . . . . . . . . . . .  D  ADDR  00B8H  NOT USED
+IPH. . . . . . . . . . . . . . . . .  D  ADDR  00B7H  NOT USED
+IPH0 . . . . . . . . . . . . . . . .  D  ADDR  00B7H  NOT USED
+IPH1 . . . . . . . . . . . . . . . .  D  ADDR  00B3H  NOT USED
+IPL0 . . . . . . . . . . . . . . . .  D  ADDR  00B8H  NOT USED
+IPL1 . . . . . . . . . . . . . . . .  D  ADDR  00B2H  NOT USED
+IT0. . . . . . . . . . . . . . . . .  B  ADDR  0088H  NOT USED
+IT1. . . . . . . . . . . . . . . . .  B  ADDR  008AH  NOT USED
+JUMP_KEY . . . . . . . . . . . . . .  N  NUMB  00A0H  NOT USED
+KBE. . . . . . . . . . . . . . . . .  D  ADDR  009DH  NOT USED
+KBF. . . . . . . . . . . . . . . . .  D  ADDR  009EH  NOT USED
+KBLS . . . . . . . . . . . . . . . .  D  ADDR  009CH  NOT USED
+OSCCON . . . . . . . . . . . . . . .  D  ADDR  0086H  NOT USED
+OV . . . . . . . . . . . . . . . . .  B  ADDR  00D2H  NOT USED
+P. . . . . . . . . . . . . . . . . .  B  ADDR  00D0H  NOT USED
+P0 . . . . . . . . . . . . . . . . .  D  ADDR  0080H
+P1 . . . . . . . . . . . . . . . . .  D  ADDR  0090H
+P1M1 . . . . . . . . . . . . . . . .  D  ADDR  00D4H  NOT USED
+P1M2 . . . . . . . . . . . . . . . .  D  ADDR  00E2H  NOT USED
+P2 . . . . . . . . . . . . . . . . .  D  ADDR  00A0H
+P3 . . . . . . . . . . . . . . . . .  D  ADDR  00B0H
+P3M1 . . . . . . . . . . . . . . . .  D  ADDR  00D5H  NOT USED
+P3M2 . . . . . . . . . . . . . . . .  D  ADDR  00E3H  NOT USED
+P4 . . . . . . . . . . . . . . . . .  D  ADDR  00C0H  NOT USED
+P4M1 . . . . . . . . . . . . . . . .  D  ADDR  00D6H  NOT USED
+P4M2 . . . . . . . . . . . . . . . .  D  ADDR  00E4H  NOT USED
+P5 . . . . . . . . . . . . . . . . .  D  ADDR  00E8H  NOT USED
+PC . . . . . . . . . . . . . . . . .  B  ADDR  00BEH  NOT USED
+PCON . . . . . . . . . . . . . . . .  D  ADDR  0087H  NOT USED
+PPCL . . . . . . . . . . . . . . . .  B  ADDR  00BEH  NOT USED
+PS . . . . . . . . . . . . . . . . .  B  ADDR  00BCH  NOT USED
+PSL. . . . . . . . . . . . . . . . .  B  ADDR  00BCH  NOT USED
+PSW. . . . . . . . . . . . . . . . .  D  ADDR  00D0H  NOT USED
+PT0. . . . . . . . . . . . . . . . .  B  ADDR  00B9H  NOT USED
+PT0L . . . . . . . . . . . . . . . .  B  ADDR  00B9H  NOT USED
+PT1. . . . . . . . . . . . . . . . .  B  ADDR  00BBH  NOT USED
+PT1L . . . . . . . . . . . . . . . .  B  ADDR  00BBH  NOT USED
+PT2. . . . . . . . . . . . . . . . .  B  ADDR  00BDH  NOT USED
+PT2L . . . . . . . . . . . . . . . .  B  ADDR  00BDH  NOT USED
+PX0. . . . . . . . . . . . . . . . .  B  ADDR  00B8H  NOT USED
+PX0L . . . . . . . . . . . . . . . .  B  ADDR  00B8H  NOT USED
+PX1. . . . . . . . . . . . . . . . .  B  ADDR  00BAH  NOT USED
+PX1L . . . . . . . . . . . . . . . .  B  ADDR  00BAH  NOT USED
+RB8. . . . . . . . . . . . . . . . .  B  ADDR  009AH  NOT USED
+RCAP2H . . . . . . . . . . . . . . .  D  ADDR  00CBH  NOT USED
+RCAP2L . . . . . . . . . . . . . . .  D  ADDR  00CAH  NOT USED
+RCLK . . . . . . . . . . . . . . . .  B  ADDR  00CDH  NOT USED
+RD . . . . . . . . . . . . . . . . .  B  ADDR  00B7H  NOT USED
+REN. . . . . . . . . . . . . . . . .  B  ADDR  009CH  NOT USED
+RESET. . . . . . . . . . . . . . . .  C  ADDR  0000H  NOT USED
+RI . . . . . . . . . . . . . . . . .  B  ADDR  0098H  NOT USED
+RS0. . . . . . . . . . . . . . . . .  B  ADDR  00D3H  NOT USED
+RS1. . . . . . . . . . . . . . . . .  B  ADDR  00D4H  NOT USED
+RXD. . . . . . . . . . . . . . . . .  B  ADDR  00B0H  NOT USED
+SADDR. . . . . . . . . . . . . . . .  D  ADDR  00A9H  NOT USED
+SADDR_0. . . . . . . . . . . . . . .  D  ADDR  00A9H  NOT USED
+SADDR_1. . . . . . . . . . . . . . .  D  ADDR  00AAH  NOT USED
+SADEN. . . . . . . . . . . . . . . .  D  ADDR  00B9H  NOT USED
+SADEN_0. . . . . . . . . . . . . . .  D  ADDR  00B9H  NOT USED
+SADEN_1. . . . . . . . . . . . . . .  D  ADDR  00BAH  NOT USED
+SBUF . . . . . . . . . . . . . . . .  D  ADDR  0099H  NOT USED
+SCON . . . . . . . . . . . . . . . .  D  ADDR  0098H  NOT USED
+SCORE. . . . . . . . . . . . . . . .  N  NUMB  0003H
+SEGMENT_TABLE. . . . . . . . . . . .  C  ADDR  00F2H
+SHIFT_BLOCK_POS. . . . . . . . . . .  C  ADDR  0017H
+SHOW_SCORE_0 . . . . . . . . . . . .  C  ADDR  00D2H
+SHOW_SCORE_1 . . . . . . . . . . . .  C  ADDR  00DDH
+SHOW_SCORE_2 . . . . . . . . . . . .  C  ADDR  00E8H
+SINT . . . . . . . . . . . . . . . .  C  ADDR  0023H  NOT USED
+SM0. . . . . . . . . . . . . . . . .  B  ADDR  009FH  NOT USED
+SM1. . . . . . . . . . . . . . . . .  B  ADDR  009EH  NOT USED
+SM2. . . . . . . . . . . . . . . . .  B  ADDR  009DH  NOT USED
+SP . . . . . . . . . . . . . . . . .  D  ADDR  0081H  NOT USED
+SPCON. . . . . . . . . . . . . . . .  D  ADDR  00C3H  NOT USED
+SPCR . . . . . . . . . . . . . . . .  D  ADDR  00D5H  NOT USED
+SPDAT. . . . . . . . . . . . . . . .  D  ADDR  00C5H  NOT USED
+SPDR . . . . . . . . . . . . . . . .  D  ADDR  0086H  NOT USED
+SPSR . . . . . . . . . . . . . . . .  D  ADDR  00AAH  NOT USED
+SPSTA. . . . . . . . . . . . . . . .  D  ADDR  00C4H  NOT USED
+T0 . . . . . . . . . . . . . . . . .  B  ADDR  00B4H  NOT USED
+T1 . . . . . . . . . . . . . . . . .  B  ADDR  00B5H  NOT USED
+T2CON. . . . . . . . . . . . . . . .  D  ADDR  00C8H  NOT USED
+T2MOD. . . . . . . . . . . . . . . .  D  ADDR  00C9H  NOT USED
+TB8. . . . . . . . . . . . . . . . .  B  ADDR  009BH  NOT USED
+TCLK . . . . . . . . . . . . . . . .  B  ADDR  00CCH  NOT USED
+TCON . . . . . . . . . . . . . . . .  D  ADDR  0088H  NOT USED
+TF0. . . . . . . . . . . . . . . . .  B  ADDR  008DH  NOT USED
+TF1. . . . . . . . . . . . . . . . .  B  ADDR  008FH  NOT USED
+TF2. . . . . . . . . . . . . . . . .  B  ADDR  00CFH  NOT USED
+TH0. . . . . . . . . . . . . . . . .  D  ADDR  008CH  NOT USED
+TH1. . . . . . . . . . . . . . . . .  D  ADDR  008DH  NOT USED
+TH2. . . . . . . . . . . . . . . . .  D  ADDR  00CDH  NOT USED
+TI . . . . . . . . . . . . . . . . .  B  ADDR  0099H  NOT USED
+TIMER0 . . . . . . . . . . . . . . .  C  ADDR  000BH  NOT USED
+TIMER1 . . . . . . . . . . . . . . .  C  ADDR  001BH  NOT USED
+TIMER2 . . . . . . . . . . . . . . .  C  ADDR  002BH  NOT USED
+TL0. . . . . . . . . . . . . . . . .  D  ADDR  008AH  NOT USED
+TL1. . . . . . . . . . . . . . . . .  D  ADDR  008BH  NOT USED
+TL2. . . . . . . . . . . . . . . . .  D  ADDR  00CCH  NOT USED
+TMOD . . . . . . . . . . . . . . . .  D  ADDR  0089H  NOT USED
+TR0. . . . . . . . . . . . . . . . .  B  ADDR  008CH  NOT USED
+TR1. . . . . . . . . . . . . . . . .  B  ADDR  008EH  NOT USED
+TR2. . . . . . . . . . . . . . . . .  B  ADDR  00CAH  NOT USED
+TXD. . . . . . . . . . . . . . . . .  B  ADDR  00B1H  NOT USED
+UPDATE_AIRTIME . . . . . . . . . . .  C  ADDR  001FH
+VAR. . . . . . . . . . . . . . . . .  N  NUMB  0020H  NOT USED
+WDTCON . . . . . . . . . . . . . . .  D  ADDR  00A7H  NOT USED
+WDTPRG . . . . . . . . . . . . . . .  D  ADDR  00A7H  NOT USED
+WDTRST . . . . . . . . . . . . . . .  D  ADDR  00A6H  NOT USED
+WR . . . . . . . . . . . . . . . . .  B  ADDR  00B6H  NOT USED
