@@ -129,9 +129,76 @@ main                                                                            
                        128     game_over:
 00A3 758000            129             mov         P0, #0
 00A6 759000            130             mov         P1, #0
-                       131             ; show score
-                       132
-                       133             end
+                       131
+00A9 0200AC            132             jmp calc_score_digits
+                       133
+                       134     calc_score_digits:
+                       135         ; calculate digits
+00AC E503              136         MOV A, SCORE
+00AE 75F064            137         MOV B, #100
+00B1 84                138         DIV AB              ; A: hundreds, B: remainder
+00B2 F9                139         MOV R1, A           ; R1: hundreds digit
+00B3 ACF0              140         MOV R4, B           ; R4: remainder
+                       141
+00B5 EC                142         MOV A, R4           ; A: remainder
+00B6 75F00A            143         MOV B, #10
+00B9 84                144         DIV AB              ; A: tens, B: units
+00BA FA                145         MOV R2, A           ; R2: tens digit
+00BB ABF0              146         MOV R3, B           ; R3: units digit
+                       147
+                       148         ; get hex value for digits
+00BD 9000F2            149         MOV DPTR, #segment_table
+00C0 E9                150         MOV A, R1
+00C1 93                151         MOVC A, @A+DPTR
+00C2 FD                152         MOV R5, A           ; R5: hundreds
+                       153
+00C3 9000F2            154         MOV DPTR, #segment_table
+00C6 EA                155         MOV A, R2
+00C7 93                156         MOVC A, @A+DPTR
+00C8 FE                157         MOV R6, A           ; R6: tens
+                       158
+00C9 9000F2            159         MOV DPTR, #segment_table
+00CC EB                160         MOV A, R3
+00CD 93                161         MOVC A, @A+DPTR
+00CE FF                162         MOV R7, A           ; R7: units
+                       163
+00CF 0200D2            164         jmp show_score_0
+                       165
+                       166     show_score_0:
+00D2 758000            167         mov     P0, #0
+00D5 8DB0              168         mov     P3, R5
+00D7 758004            169             mov     P0, #00000100b ; activate hundreds
+                       170
+00DA 0200DD            171         jmp show_score_1
+                       172
+                       173     show_score_1:
+00DD 758000            174         mov     P0, #0
+00E0 8EB0              175         mov     P3, R6
+00E2 758002            176             mov     P0, #00000010b ; activate tens
+                       177
+00E5 0200E8            178         jmp show_score_2
+                       179
+                       180     show_score_2:
+00E8 758000            181         mov     P0, #0
+00EB 8FB0              182         mov     P3, R7
+00ED 758001            183             mov     P0, #00000001b ; activate units
+                       184
+00F0 80E0              185         jmp show_score_0
+                       186
+                       187     ; lookup table for 7-segment display(ABCDEFG0)
+                       188     segment_table:
+00F2 FC                189         db 0FCH ; 0 = 11111100
+00F3 60                190         db 060H ; 1 = 01100000
+00F4 DA                191         db 0DAH ; 2 = 11011010
+00F5 F2                192         db 0F2H ; 3 = 11110010
+00F6 66                193         db 066H ; 4 = 01100110
+00F7 B6                194         db 0B6H ; 5 = 10110110
+00F8 BE                195         db 0BEH ; 6 = 10111110
+00F9 E0                196         db 0E0H ; 7 = 11100000
+00FA FE                197         db 0FEH ; 8 = 11111110
+00FB F6                198         db 0F6H ; 9 = 11110110
+                       199
+                       200     end
 ASSEMBLY COMPLETE, NO ERRORS FOUND, NO WARNINGS
 
 
@@ -161,6 +228,7 @@ BDRCON . . . . . . . . . . . . . . .  D  ADDR  009BH  NOT USED
 BDRCON_1 . . . . . . . . . . . . . .  D  ADDR  009CH  NOT USED
 BLOCK_POS. . . . . . . . . . . . . .  N  NUMB  0002H
 BRL. . . . . . . . . . . . . . . . .  D  ADDR  009AH  NOT USED
+CALC_SCORE_DIGITS. . . . . . . . . .  C  ADDR  00ACH
 CCAP0H . . . . . . . . . . . . . . .  D  ADDR  00FAH  NOT USED
 CCAP0L . . . . . . . . . . . . . . .  D  ADDR  00EAH  NOT USED
 CCAP1H . . . . . . . . . . . . . . .  D  ADDR  00FBH  NOT USED
@@ -251,7 +319,7 @@ P1 . . . . . . . . . . . . . . . . .  D  ADDR  0090H
 P1M1 . . . . . . . . . . . . . . . .  D  ADDR  00D4H  NOT USED
 P1M2 . . . . . . . . . . . . . . . .  D  ADDR  00E2H  NOT USED
 P2 . . . . . . . . . . . . . . . . .  D  ADDR  00A0H
-P3 . . . . . . . . . . . . . . . . .  D  ADDR  00B0H  NOT USED
+P3 . . . . . . . . . . . . . . . . .  D  ADDR  00B0H
 P3M1 . . . . . . . . . . . . . . . .  D  ADDR  00D5H  NOT USED
 P3M2 . . . . . . . . . . . . . . . .  D  ADDR  00E3H  NOT USED
 P4 . . . . . . . . . . . . . . . . .  D  ADDR  00C0H  NOT USED
@@ -294,7 +362,11 @@ SADEN_1. . . . . . . . . . . . . . .  D  ADDR  00BAH  NOT USED
 SBUF . . . . . . . . . . . . . . . .  D  ADDR  0099H  NOT USED
 SCON . . . . . . . . . . . . . . . .  D  ADDR  0098H  NOT USED
 SCORE. . . . . . . . . . . . . . . .  N  NUMB  0003H
+SEGMENT_TABLE. . . . . . . . . . . .  C  ADDR  00F2H
 SHIFT_BLOCK_POS. . . . . . . . . . .  C  ADDR  0017H
+SHOW_SCORE_0 . . . . . . . . . . . .  C  ADDR  00D2H
+SHOW_SCORE_1 . . . . . . . . . . . .  C  ADDR  00DDH
+SHOW_SCORE_2 . . . . . . . . . . . .  C  ADDR  00E8H
 SINT . . . . . . . . . . . . . . . .  C  ADDR  0023H  NOT USED
 SM0. . . . . . . . . . . . . . . . .  B  ADDR  009FH  NOT USED
 SM1. . . . . . . . . . . . . . . . .  B  ADDR  009EH  NOT USED

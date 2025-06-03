@@ -16,6 +16,7 @@ init:
     mov     P0, #0
     mov     P1, #0
 	mov	    P2, #0FFh
+	mov     P3, #0
 	clr     B.0
 	mov	    AIRTIME, #0
 	mov	    BLOCK_POS, #000000001b ; pos is instantly shifted left
