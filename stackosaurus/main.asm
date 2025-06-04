@@ -130,72 +130,72 @@ game_over:
 	mov	    P0, #0
 	mov	    P1, #0
 
-	jmp calc_score_digits
+	jmp     calc_score_digits
 
 calc_score_digits:
     ; calculate digits
-    MOV A, SCORE
-    MOV B, #100
-    DIV AB              ; A: hundreds, B: remainder
-    MOV R1, A           ; R1: hundreds digit
-    MOV R4, B           ; R4: remainder
+    mov     A, SCORE
+    mov     B, #100
+    div     AB              ; A: hundreds, B: remainder
+    mov     R1, A           ; R1: hundreds digit
+    mov     R4, B           ; R4: remainder
 
-    MOV A, R4           ; A: remainder
-    MOV B, #10
-    DIV AB              ; A: tens, B: units
-    MOV R2, A           ; R2: tens digit
-    MOV R3, B           ; R3: units digit
+    mov     A, R4           ; A: remainder
+    mov     B, #10
+    div     AB              ; A: tens, B: units
+    mov     R2, A           ; R2: tens digit
+    mov     R3, B           ; R3: units digit
 
     ; get hex value for digits
-    MOV DPTR, #segment_table
-    MOV A, R1
-    MOVC A, @A+DPTR
-    MOV R5, A           ; R5: hundreds
+    mov     DPTR, #segment_table
+    mov     A, R1
+    movc    A, @A+DPTR
+    mov     R5, A           ; R5: hundreds
 
-    MOV DPTR, #segment_table
-    MOV A, R2
-    MOVC A, @A+DPTR
-    MOV R6, A           ; R6: tens
+    mov     DPTR, #segment_table
+    mov     A, R2
+    movc    A, @A+DPTR
+    mov     R6, A           ; R6: tens
 
-    MOV DPTR, #segment_table
-    MOV A, R3
-    MOVC A, @A+DPTR
-    MOV R7, A           ; R7: units
+    mov     DPTR, #segment_table
+    mov     A, R3
+    movc    A, @A+DPTR
+    mov     R7, A           ; R7: units
 
-    jmp show_score_0
+    jmp     show_score_0
 
 show_score_0:
     mov     P0, #0
     mov     P3, R5
 	mov     P0, #00000100b ; activate hundreds
 
-    jmp show_score_1
+    jmp     show_score_1
 
 show_score_1:
     mov     P0, #0
     mov     P3, R6
 	mov     P0, #00000010b ; activate tens
 
-    jmp show_score_2
+    jmp     show_score_2
 
 show_score_2:
     mov     P0, #0
     mov     P3, R7
 	mov     P0, #00000001b ; activate units
     
-    jmp show_score_0
+    jmp     show_score_0
 
 ; lookup table for 7-segment display(ABCDEFG0)
 segment_table:
-    db 0FCH ; 0 = 11111100
-    db 060H ; 1 = 01100000
-    db 0DAH ; 2 = 11011010
-    db 0F2H ; 3 = 11110010
-    db 066H ; 4 = 01100110
-    db 0B6H ; 5 = 10110110
-    db 0BEH ; 6 = 10111110
-    db 0E0H ; 7 = 11100000
-    db 0FEH ; 8 = 11111110
-    db 0F6H ; 9 = 11110110
+    db     0FCH ; 0 = 11111100
+    db     060H ; 1 = 01100000
+    db     0DAH ; 2 = 11011010
+    db     0F2H ; 3 = 11110010
+    db     066H ; 4 = 01100110
+    db     0B6H ; 5 = 10110110
+    db     0BEH ; 6 = 10111110
+    db     0E0H ; 7 = 11100000
+    db     0FEH ; 8 = 11111110
+    db     0F6H ; 9 = 11110110
 
 end

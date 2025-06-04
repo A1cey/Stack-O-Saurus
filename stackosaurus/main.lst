@@ -131,73 +131,73 @@ main                                                                            
 00A6 758000            130             mov         P0, #0
 00A9 759000            131             mov         P1, #0
                        132
-00AC 0200AF            133             jmp calc_score_digits
+00AC 0200AF            133             jmp     calc_score_digits
                        134
                        135     calc_score_digits:
                        136         ; calculate digits
-00AF E503              137         MOV A, SCORE
-00B1 75F064            138         MOV B, #100
-00B4 84                139         DIV AB              ; A: hundreds, B: remainder
-00B5 F9                140         MOV R1, A           ; R1: hundreds digit
-00B6 ACF0              141         MOV R4, B           ; R4: remainder
+00AF E503              137         mov     A, SCORE
+00B1 75F064            138         mov     B, #100
+00B4 84                139         div     AB              ; A: hundreds, B: remainder
+00B5 F9                140         mov     R1, A           ; R1: hundreds digit
+00B6 ACF0              141         mov     R4, B           ; R4: remainder
                        142
-00B8 EC                143         MOV A, R4           ; A: remainder
-00B9 75F00A            144         MOV B, #10
-00BC 84                145         DIV AB              ; A: tens, B: units
-00BD FA                146         MOV R2, A           ; R2: tens digit
-00BE ABF0              147         MOV R3, B           ; R3: units digit
+00B8 EC                143         mov     A, R4           ; A: remainder
+00B9 75F00A            144         mov     B, #10
+00BC 84                145         div     AB              ; A: tens, B: units
+00BD FA                146         mov     R2, A           ; R2: tens digit
+00BE ABF0              147         mov     R3, B           ; R3: units digit
                        148
                        149         ; get hex value for digits
-00C0 9000F5            150         MOV DPTR, #segment_table
-00C3 E9                151         MOV A, R1
-00C4 93                152         MOVC A, @A+DPTR
-00C5 FD                153         MOV R5, A           ; R5: hundreds
+00C0 9000F5            150         mov     DPTR, #segment_table
+00C3 E9                151         mov     A, R1
+00C4 93                152         movc    A, @A+DPTR
+00C5 FD                153         mov     R5, A           ; R5: hundreds
                        154
-00C6 9000F5            155         MOV DPTR, #segment_table
-00C9 EA                156         MOV A, R2
-00CA 93                157         MOVC A, @A+DPTR
-00CB FE                158         MOV R6, A           ; R6: tens
+00C6 9000F5            155         mov     DPTR, #segment_table
+00C9 EA                156         mov     A, R2
+00CA 93                157         movc    A, @A+DPTR
+00CB FE                158         mov     R6, A           ; R6: tens
                        159
-00CC 9000F5            160         MOV DPTR, #segment_table
-00CF EB                161         MOV A, R3
-00D0 93                162         MOVC A, @A+DPTR
-00D1 FF                163         MOV R7, A           ; R7: units
+00CC 9000F5            160         mov     DPTR, #segment_table
+00CF EB                161         mov     A, R3
+00D0 93                162         movc    A, @A+DPTR
+00D1 FF                163         mov     R7, A           ; R7: units
                        164
-00D2 0200D5            165         jmp show_score_0
+00D2 0200D5            165         jmp     show_score_0
                        166
                        167     show_score_0:
 00D5 758000            168         mov     P0, #0
 00D8 8DB0              169         mov     P3, R5
 00DA 758004            170             mov     P0, #00000100b ; activate hundreds
                        171
-00DD 0200E0            172         jmp show_score_1
+00DD 0200E0            172         jmp     show_score_1
                        173
                        174     show_score_1:
 00E0 758000            175         mov     P0, #0
 00E3 8EB0              176         mov     P3, R6
 00E5 758002            177             mov     P0, #00000010b ; activate tens
                        178
-00E8 0200EB            179         jmp show_score_2
+00E8 0200EB            179         jmp     show_score_2
                        180
                        181     show_score_2:
 00EB 758000            182         mov     P0, #0
 00EE 8FB0              183         mov     P3, R7
 00F0 758001            184             mov     P0, #00000001b ; activate units
                        185
-00F3 80E0              186         jmp show_score_0
+00F3 80E0              186         jmp     show_score_0
                        187
                        188     ; lookup table for 7-segment display(ABCDEFG0)
                        189     segment_table:
-00F5 FC                190         db 0FCH ; 0 = 11111100
-00F6 60                191         db 060H ; 1 = 01100000
-00F7 DA                192         db 0DAH ; 2 = 11011010
-00F8 F2                193         db 0F2H ; 3 = 11110010
-00F9 66                194         db 066H ; 4 = 01100110
-00FA B6                195         db 0B6H ; 5 = 10110110
-00FB BE                196         db 0BEH ; 6 = 10111110
-00FC E0                197         db 0E0H ; 7 = 11100000
-00FD FE                198         db 0FEH ; 8 = 11111110
-00FE F6                199         db 0F6H ; 9 = 11110110
+00F5 FC                190         db     0FCH ; 0 = 11111100
+00F6 60                191         db     060H ; 1 = 01100000
+00F7 DA                192         db     0DAH ; 2 = 11011010
+00F8 F2                193         db     0F2H ; 3 = 11110010
+00F9 66                194         db     066H ; 4 = 01100110
+00FA B6                195         db     0B6H ; 5 = 10110110
+00FB BE                196         db     0BEH ; 6 = 10111110
+00FC E0                197         db     0E0H ; 7 = 11100000
+00FD FE                198         db     0FEH ; 8 = 11111110
+00FE F6                199         db     0F6H ; 9 = 11110110
                        200
                        201     end
 ASSEMBLY COMPLETE, NO ERRORS FOUND, NO WARNINGS
